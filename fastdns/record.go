@@ -1,6 +1,6 @@
-package dns
+package fastdns
 
-//go:generate go run ../gen.go ./
+//go:generate go run gen/sort.go ./
 
 type ARecord struct {
 	Name   string `json:"name,omitempty"`

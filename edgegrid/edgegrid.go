@@ -1,4 +1,4 @@
-package dns
+package edgegrid
 
 import (
 	"crypto/hmac"
@@ -10,17 +10,11 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.cms.gov/superbrilliant/akamai"
 )
 
-// The information needed to sign a request under Akamai's
-// "EdgeGrid" authentication scheme
-type Auth struct {
-	ClientSecret string
-	AccessToken  string
-	ClientToken  string
-	Scheme       string
-	Host         string
-}
+const timeFormat = "20060102T15:04:05-0700"
 
 // The information found in the Authorization header under
 // Akamai's "EdgeGrid" authentication scheme
@@ -64,7 +58,7 @@ func ParseHeader(header string) (*AuthHeaderInfo, error) {
 }
 
 // Returns the auth header up through the semicolon before "signature=".
-func (a *Auth) generateAuthHeaderPrefix(timestamp string, nonce string) (string, error) {
+func generateAuthHeaderPrefix(c akamai.Credentials, timestamp string, nonce string) (string, error) {
 	if nonce == "" {
 		b := make([]byte, 8)
 		if _, err := rand.Read(b); err != nil {
@@ -73,10 +67,10 @@ func (a *Auth) generateAuthHeaderPrefix(timestamp string, nonce string) (string,
 		nonce = fmt.Sprintf("%x", b)
 	}
 	return fmt.Sprintf("EG1-HMAC-SHA256 client_token=%s;access_token=%s;timestamp=%s;nonce=%s;",
-		a.ClientToken, a.AccessToken, timestamp, nonce), nil
+		c.ClientToken, c.AccessToken, timestamp, nonce), nil
 }
 
-func (a *Auth) generateAuthHeader(method, path string, body []byte, nonce, timestamp string) (string, error) {
+func generateAuthHeader(c akamai.Credentials, method, scheme, path string, body []byte, nonce, timestamp string) (string, error) {
 	method = strings.ToUpper(method)
 	if path == "" || path[0] != '/' {
 		path = "/" + path
@@ -84,7 +78,7 @@ func (a *Auth) generateAuthHeader(method, path string, body []byte, nonce, times
 	if timestamp == "" {
 		timestamp = time.Now().UTC().Format(timeFormat)
 	}
-	auth, err := a.generateAuthHeaderPrefix(timestamp, nonce)
+	prefix, err := generateAuthHeaderPrefix(c, timestamp, nonce)
 	if err != nil {
 		return "", err
 	}
@@ -96,16 +90,16 @@ func (a *Auth) generateAuthHeader(method, path string, body []byte, nonce, times
 	headers := "" // no signed headers required for FastDNS
 	toSign := strings.Join([]string{
 		method,
-		a.Scheme,
-		a.Host,
+		scheme,
+		c.Host,
 		path,
 		headers,
 		contentDigest,
-		auth,
+		prefix,
 	}, "\t")
 	// log.Printf("To sign: %s", strings.Replace(toSign, "\t", "\\t", -1))
 
-	mac := hmac.New(sha256.New, []byte(a.ClientSecret))
+	mac := hmac.New(sha256.New, []byte(c.ClientSecret))
 	mac.Write([]byte(timestamp))
 	signingKey := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 
@@ -113,18 +107,18 @@ func (a *Auth) generateAuthHeader(method, path string, body []byte, nonce, times
 	mac.Write([]byte(toSign))
 
 	sig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	return fmt.Sprintf("%ssignature=%s", auth, sig), nil
+	return fmt.Sprintf("%ssignature=%s", prefix, sig), nil
 }
 
 // Returns the value that should be set for the "Authorization" header for a request
 // under Akamai's "EdgeGrid" authentication scheme
-func (a *Auth) GenerateAuthHeader(method, path string, body []byte) (string, error) {
-	return a.generateAuthHeader(method, path, body, "", "")
+func GenerateAuthHeader(c akamai.Credentials, method, scheme, path string, body []byte) (string, error) {
+	return generateAuthHeader(c, method, scheme, path, body, "", "")
 }
 
 // Returns true if the AuthHeaderInfo is correct for the given request
-func (a *Auth) CheckRequest(method, path string, body []byte, i *AuthHeaderInfo) bool {
-	h, err := a.generateAuthHeader(method, path, body, i.Nonce, i.Timestamp)
+func CheckRequest(c akamai.Credentials, method, scheme, path string, body []byte, i *AuthHeaderInfo) bool {
+	h, err := generateAuthHeader(c, method, scheme, path, body, i.Nonce, i.Timestamp)
 	if err != nil {
 		log.Printf("Unexpected error while checking request: %s", err)
 	}
