@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.cms.gov/superbrilliant/akamai"
-	"github.cms.gov/superbrilliant/akamai/edgegrid"
+	"github.com/corbaltcode/go-akamai"
+	"github.com/corbaltcode/go-akamai/edgegrid"
 )
 
 const scheme = "https"

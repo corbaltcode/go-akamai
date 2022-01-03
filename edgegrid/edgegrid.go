@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.cms.gov/superbrilliant/akamai"
+	"github.com/corbaltcode/go-akamai"
 )
 
 const timeFormat = "20060102T15:04:05-0700"

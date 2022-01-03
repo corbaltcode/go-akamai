@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sort"
 
-	"github.cms.gov/superbrilliant/akamai"
-	"github.cms.gov/superbrilliant/akamai/internal/request"
+	"github.com/corbaltcode/go-akamai"
+	"github.com/corbaltcode/go-akamai/internal/request"
 )
 
 type ZoneResponse struct {
