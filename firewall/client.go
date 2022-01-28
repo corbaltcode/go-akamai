@@ -14,10 +14,13 @@ import (
 
 const basePath = "/firewall-rules-manager/v1/"
 
+// A Client allows access to the Akamai Firewall Rules Notification API.
 type Client struct {
 	Credentials akamai.Credentials
 }
 
+// GetCIDRBlocks returns all CIDR blocks for all services the client is
+// subscribed to.
 func (c *Client) GetCIDRBlocks() ([]CIDRBlock, error) {
 	var respBlocks []cidrBlockResp
 
@@ -39,6 +42,7 @@ func (c *Client) GetCIDRBlocks() ([]CIDRBlock, error) {
 	return blocks, nil
 }
 
+// GetService returns information about a service by ID.
 func (c *Client) GetService(id int) (Service, error) {
 	var service Service
 
