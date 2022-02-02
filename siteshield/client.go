@@ -75,7 +75,6 @@ type Map struct {
 
 func newMapFromResp(r mapResp) (Map, error) {
 	var m Map
-	// m.AcknowledgeRequiredBy = time.UnixMilli(r.AcknowledgeRequiredBy)
 	acknowledgeRequiredBy, err := time.Parse(time.RFC3339, r.AcknowledgeRequiredBy)
 	if err != nil {
 		return Map{}, err
