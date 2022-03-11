@@ -75,12 +75,7 @@ type Map struct {
 
 func newMapFromResp(r mapResp) (Map, error) {
 	var m Map
-	acknowledgeRequiredBy, err := time.Parse(time.RFC3339, r.AcknowledgeRequiredBy)
-	if err != nil {
-		return Map{}, err
-	}
-	m.AcknowledgeRequiredBy = acknowledgeRequiredBy
-
+	m.AcknowledgeRequiredBy = time.UnixMilli(r.AcknowledgeRequiredBy)
 	m.Acknowledged = r.Acknowledged
 	m.AcknowledgedBy = r.AcknowledgedBy
 	m.Alias = r.MapAlias
@@ -123,7 +118,7 @@ type mapsResp struct {
 }
 
 type mapResp struct {
-	AcknowledgeRequiredBy string   `json:"acknowledgeRequiredBy"`
+	AcknowledgeRequiredBy int64    `json:"acknowledgeRequiredBy"`
 	Acknowledged          bool     `json:"acknowledged"`
 	AcknowledgedBy        string   `json:"acknowledgedBy"`
 	Contacts              []string `json:"contacts"`
