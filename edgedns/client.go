@@ -60,22 +60,22 @@ func handleQueryArgs(q url.Values) string {
 	return "?" + s
 }
 
-func (c *Client) ListRecordsets(zone string, queryArgs url.Values) ([]Recordset, error) {
+func (c *Client) ListRecordsets(zone string, queryArgs url.Values) (*RecordsetResponse, error) {
 	var rs RecordsetResponse
 	err := request.DoJSON(c.Credentials, http.MethodGet, "/config-dns/v2/zones/"+zone+"/recordsets"+handleQueryArgs(queryArgs), nil, &rs)
 	if err != nil {
 		return nil, err
 	}
-	return rs.Recordsets, nil
+	return &rs, nil
 }
 
-func (c *Client) RetrieveRecordsetTypes(zone, name string) ([]string, error) {
+func (c *Client) RetrieveRecordsetTypes(zone, name string) (*TypesResponse, error) {
 	var tr TypesResponse
 	err := request.DoJSON(c.Credentials, http.MethodGet, "/config-dns/v2/zones/"+zone+"/names/"+name+"/types", nil, &tr)
 	if err != nil {
 		return nil, err
 	}
-	return tr.Types, nil
+	return &tr, nil
 }
 
 func (c *Client) RetrieveRecordset(zone, name, recordSetType string) (*Recordset, error) {
