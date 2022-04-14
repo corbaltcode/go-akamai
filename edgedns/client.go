@@ -2,7 +2,7 @@ package edgedns
 
 import (
 	"net/http"
-	"strings"
+	"net/url"
 
 	"github.com/corbaltcode/go-akamai"
 	"github.com/corbaltcode/go-akamai/internal/request"
@@ -52,20 +52,15 @@ type Client struct {
 	Credentials akamai.Credentials
 }
 
-func handleQueryArgs(q map[string]string) string {
-	if len(q) == 0 {
-		return ""
+func handleQueryArgs(q url.Values) string {
+	s := q.Encode()
+	if len(s) == 0 {
+		return s
 	}
-	keyValues := make([]string, len(q))
-	var counter int
-	for key, value := range q {
-		keyValues[counter] = key + "=" + value
-		counter += 1
-	}
-	return "?" + strings.Join(keyValues, "&")
+	return "?" + s
 }
 
-func (c *Client) ListRecordsets(zone string, queryArgs map[string]string) ([]Recordset, error) {
+func (c *Client) ListRecordsets(zone string, queryArgs url.Values) ([]Recordset, error) {
 	var rs RecordsetResponse
 	err := request.DoJSON(c.Credentials, http.MethodGet, "/config-dns/v2/zones/"+zone+"/recordsets"+handleQueryArgs(queryArgs), nil, &rs)
 	if err != nil {
