@@ -87,20 +87,22 @@ func (c *Client) RetrieveRecordset(zone, name, recordSetType string) (*Recordset
 	return &rs, nil
 }
 
-func (c *Client) CreateRecordset(zone, name, recordSetType string, body *Recordset) error {
-	err := request.DoJSON(c.Credentials, http.MethodPost, "/config-dns/v2/zones/"+zone+"/names/"+name+"/types/"+recordSetType, body, nil)
+func (c *Client) CreateRecordset(zone, name, recordSetType string, body *Recordset) (*Recordset, error) {
+	var rs Recordset
+	err := request.DoJSON(c.Credentials, http.MethodPost, "/config-dns/v2/zones/"+zone+"/names/"+name+"/types/"+recordSetType, body, &rs)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &rs, nil
 }
 
-func (c *Client) UpdateRecordset(zone, name, recordSetType string, body *Recordset) error {
-	err := request.DoJSON(c.Credentials, http.MethodPut, "/config-dns/v2/zones/"+zone+"/names/"+name+"/types/"+recordSetType, body, nil)
+func (c *Client) UpdateRecordset(zone, name, recordSetType string, body *Recordset) (*Recordset, error) {
+	var rs Recordset
+	err := request.DoJSON(c.Credentials, http.MethodPut, "/config-dns/v2/zones/"+zone+"/names/"+name+"/types/"+recordSetType, body, &rs)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &rs, nil
 }
 
 func (c *Client) DeleteRecordset(zone, name, recordSetType string) error {
