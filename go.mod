@@ -9,7 +9,9 @@ require (
 )
 
 require (
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
 )
+
+require github.com/stretchr/testify v1.7.0 // indirect
