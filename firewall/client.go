@@ -6,10 +6,11 @@ import (
 	"strconv"
 	"strings"
 
+	"net/netip"
+
 	"cloud.google.com/go/civil"
 	"github.com/corbaltcode/go-akamai"
 	"github.com/corbaltcode/go-akamai/internal/request"
-	"inet.af/netaddr"
 )
 
 const basePath = "/firewall-rules-manager/v1/"
@@ -64,13 +65,13 @@ type CIDRBlock struct {
 	ID            int
 	ServiceID     int
 	ServiceName   string
-	CIDR          netaddr.IPPrefix
+	CIDR          netip.Prefix
 	Ports         []int
 	CreationDate  civil.Date
 	EffectiveDate civil.Date
 	ChangeDate    civil.Date
-	MinIP         netaddr.IP
-	MaxIP         netaddr.IP
+	MinIP         netip.Addr
+	MaxIP         netip.Addr
 	LastAction    LastAction
 }
 
@@ -82,7 +83,7 @@ func newCIDRBlockFromResp(r cidrBlockResp) (CIDRBlock, error) {
 	v.ServiceID = r.ServiceID
 	v.ServiceName = r.ServiceName
 
-	v.CIDR, err = netaddr.ParseIPPrefix(r.CIDR + r.CIDRMask)
+	v.CIDR, err = netip.ParsePrefix(r.CIDR + r.CIDRMask)
 	if err != nil {
 		return CIDRBlock{}, err
 	}
@@ -120,11 +121,11 @@ func newCIDRBlockFromResp(r cidrBlockResp) (CIDRBlock, error) {
 		}
 	}
 
-	v.MinIP, err = netaddr.ParseIP(r.MinIP)
+	v.MinIP, err = netip.ParseAddr(r.MinIP)
 	if err != nil {
 		return CIDRBlock{}, err
 	}
-	v.MaxIP, err = netaddr.ParseIP(r.MaxIP)
+	v.MaxIP, err = netip.ParseAddr(r.MaxIP)
 	if err != nil {
 		return CIDRBlock{}, err
 	}

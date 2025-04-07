@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"net/netip"
+
 	"github.com/corbaltcode/go-akamai"
 	"github.com/corbaltcode/go-akamai/internal/request"
-	"inet.af/netaddr"
 )
 
 const basePath = "/siteshield/v1/"
@@ -62,11 +63,11 @@ type Map struct {
 	AcknowledgedBy        string
 	Alias                 string
 	Contacts              []string
-	CurrentCIDRs          []netaddr.IPPrefix
+	CurrentCIDRs          []netip.Prefix
 	ID                    int
 	IsShared              bool
 	LatestTicketID        int
-	ProposedCIDRs         []netaddr.IPPrefix
+	ProposedCIDRs         []netip.Prefix
 	RuleName              string
 	Service               Service
 	SureRouteName         string
@@ -83,9 +84,9 @@ func newMapFromResp(r mapResp) (Map, error) {
 	m.Contacts = make([]string, len(r.Contacts))
 	copy(m.Contacts, r.Contacts)
 
-	m.CurrentCIDRs = make([]netaddr.IPPrefix, len(r.CurrentCIDRs))
+	m.CurrentCIDRs = make([]netip.Prefix, len(r.CurrentCIDRs))
 	for i, str := range r.CurrentCIDRs {
-		prefix, err := netaddr.ParseIPPrefix(str)
+		prefix, err := netip.ParsePrefix(str)
 		if err != nil {
 			return Map{}, err
 		}
@@ -96,9 +97,9 @@ func newMapFromResp(r mapResp) (Map, error) {
 	m.IsShared = r.Shared
 	m.LatestTicketID = r.LatestTicketID
 
-	m.ProposedCIDRs = make([]netaddr.IPPrefix, len(r.ProposedCIDRs))
+	m.ProposedCIDRs = make([]netip.Prefix, len(r.ProposedCIDRs))
 	for i, str := range r.ProposedCIDRs {
-		prefix, err := netaddr.ParseIPPrefix(str)
+		prefix, err := netip.ParsePrefix(str)
 		if err != nil {
 			return Map{}, err
 		}
