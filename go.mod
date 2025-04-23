@@ -1,6 +1,6 @@
 module github.com/corbaltcode/go-akamai
 
-go 1.17
+go 1.24
 
 require (
 	cloud.google.com/go v0.99.0
