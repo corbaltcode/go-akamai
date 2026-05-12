@@ -10,11 +10,17 @@ const AkamaiDebug AkamaiContext = 0
 
 // WithDebugEnabled returns a copy of the parent context with debug enabled.
 func WithDebugEnabled(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	return context.WithValue(ctx, AkamaiDebug, true)
 }
 
 // DebugEnabled returns true if the context has debug enabled.
 func DebugEnabled(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
 	debugAny := ctx.Value(AkamaiDebug)
 	debug, _ := debugAny.(bool)
 	return debug
