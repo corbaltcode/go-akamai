@@ -1,6 +1,7 @@
 package edgegrid
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -58,7 +59,7 @@ func ParseHeader(header string) (*AuthHeaderInfo, error) {
 }
 
 // Returns the auth header up through the semicolon before "signature=".
-func generateAuthHeaderPrefix(c akamai.Credentials, timestamp string, nonce string) (string, error) {
+func generateAuthHeaderPrefix(ctx context.Context, c akamai.Credentials, timestamp string, nonce string) (string, error) {
 	if nonce == "" {
 		b := make([]byte, 8)
 		if _, err := rand.Read(b); err != nil {
@@ -66,11 +67,20 @@ func generateAuthHeaderPrefix(c akamai.Credentials, timestamp string, nonce stri
 		}
 		nonce = fmt.Sprintf("%x", b)
 	}
-	return fmt.Sprintf("EG1-HMAC-SHA256 client_token=%s;access_token=%s;timestamp=%s;nonce=%s;",
-		c.ClientToken, c.AccessToken, timestamp, nonce), nil
+
+	header := fmt.Sprintf("EG1-HMAC-SHA256 client_token=%s;access_token=%s;timestamp=%s;nonce=%s;",
+		c.ClientToken, c.AccessToken, timestamp, nonce)
+
+	if akamai.DebugEnabled(ctx) {
+		log.Printf("generated Akamai EdgeGrid Authorization header prefix: %s", header)
+	}
+
+	return header, nil
 }
 
-func generateAuthHeader(c akamai.Credentials, method, scheme, path string, body []byte, nonce, timestamp string) (string, error) {
+// Returns the full value that should be set for the "Authorization" header for a request under Akamai's
+// "EdgeGrid" authentication scheme, including the signature.
+func generateAuthHeader(ctx context.Context, c akamai.Credentials, method, scheme, path string, body []byte, nonce, timestamp string) (string, error) {
 	method = strings.ToUpper(method)
 	if path == "" || path[0] != '/' {
 		path = "/" + path
@@ -78,7 +88,7 @@ func generateAuthHeader(c akamai.Credentials, method, scheme, path string, body 
 	if timestamp == "" {
 		timestamp = time.Now().UTC().Format(timeFormat)
 	}
-	prefix, err := generateAuthHeaderPrefix(c, timestamp, nonce)
+	prefix, err := generateAuthHeaderPrefix(ctx, c, timestamp, nonce)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +107,6 @@ func generateAuthHeader(c akamai.Credentials, method, scheme, path string, body 
 		contentDigest,
 		prefix,
 	}, "\t")
-	// log.Printf("To sign: %s", strings.Replace(toSign, "\t", "\\t", -1))
 
 	mac := hmac.New(sha256.New, []byte(c.ClientSecret))
 	mac.Write([]byte(timestamp))
@@ -107,18 +116,39 @@ func generateAuthHeader(c akamai.Credentials, method, scheme, path string, body 
 	mac.Write([]byte(toSign))
 
 	sig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	return fmt.Sprintf("%ssignature=%s", prefix, sig), nil
+	header := fmt.Sprintf("%ssignature=%s", prefix, sig)
+
+	if akamai.DebugEnabled(ctx) {
+		log.Printf("generated Akamai EdgeGrid Authorization header: %ssignature=<redacted>", prefix)
+	}
+
+	return header, nil
 }
 
-// Returns the value that should be set for the "Authorization" header for a request
-// under Akamai's "EdgeGrid" authentication scheme
+// GenerateAuthHeader returns the value that should be set for the "Authorization" header for a request under Akamai's
+// "EdgeGrid" authentication scheme.
+//
+// This is a compatibility wrapper around GenerateAuthHeaderWithContext that uses context.Background() as the context.
 func GenerateAuthHeader(c akamai.Credentials, method, scheme, path string, body []byte) (string, error) {
-	return generateAuthHeader(c, method, scheme, path, body, "", "")
+	return GenerateAuthHeaderWithContext(context.Background(), c, method, scheme, path, body)
 }
 
-// Returns true if the AuthHeaderInfo is correct for the given request
+// GenerateAuthHeaderWithContext returns the value that should be set for the "Authorization" header for a
+// request under Akamai's "EdgeGrid" authentication scheme.
+func GenerateAuthHeaderWithContext(ctx context.Context, c akamai.Credentials, method, scheme, path string, body []byte) (string, error) {
+	return generateAuthHeader(ctx, c, method, scheme, path, body, "", "")
+}
+
+// CheckRequest returns true if the AuthHeaderInfo is correct for the given request.
+//
+// This is a compatibility wrapper around CheckRequestWithContext that uses context.Background() as the context.
 func CheckRequest(c akamai.Credentials, method, scheme, path string, body []byte, i *AuthHeaderInfo) bool {
-	h, err := generateAuthHeader(c, method, scheme, path, body, i.Nonce, i.Timestamp)
+	return CheckRequestWithContext(context.Background(), c, method, scheme, path, body, i)
+}
+
+// CheckRequestWithContext returns true if the AuthHeaderInfo is correct for the given request.
+func CheckRequestWithContext(ctx context.Context, c akamai.Credentials, method, scheme, path string, body []byte, i *AuthHeaderInfo) bool {
+	h, err := generateAuthHeader(ctx, c, method, scheme, path, body, i.Nonce, i.Timestamp)
 	if err != nil {
 		log.Printf("Unexpected error while checking request: %s", err)
 	}
