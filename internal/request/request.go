@@ -29,6 +29,10 @@ func Do(c akamai.Credentials, method string, path string, in []byte, out *[]byte
 //
 // The context is used to determine whether debugging is enabled and to allow cancellation of the request.
 func DoWithContext(ctx context.Context, c akamai.Credentials, method string, path string, in []byte, out *[]byte) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	url := fmt.Sprintf("%s://%s%s", scheme, c.Host, path)
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(in))
 	if err != nil {
@@ -88,6 +92,10 @@ func DoJSON(c akamai.Credentials, method string, path string, in interface{}, ou
 //
 // The context is used to determine whether debugging is enabled and to allow cancellation of the request.
 func DoJSONWithContext(ctx context.Context, c akamai.Credentials, method string, path string, in interface{}, out interface{}) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	var bufIn []byte
 	var bufOut []byte
 	var err error
@@ -99,7 +107,7 @@ func DoJSONWithContext(ctx context.Context, c akamai.Credentials, method string,
 		}
 	}
 
-	err = Do(c, method, path, bufIn, &bufOut)
+	err = DoWithContext(ctx, c, method, path, bufIn, &bufOut)
 	if err != nil {
 		return err
 	}
