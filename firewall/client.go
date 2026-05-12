@@ -154,7 +154,7 @@ func newCIDRBlockFromResp(ctx context.Context, r cidrBlockResp) (CIDRBlock, erro
 		}
 	}
 	if r.ChangeDate == "" {
-		v.EffectiveDate = civil.Date{}
+		v.ChangeDate = civil.Date{}
 	} else {
 		v.ChangeDate, err = civil.ParseDate(r.ChangeDate)
 		if err != nil {
